@@ -1,6 +1,9 @@
 ###########################################
-from flask import Flask, request, send_from_directory, jsonify, Response
-import codeforces_api
+from flask import Flask, request, send_from_directory, jsonify, Response, redirect, url_for
+from cf import *
+from judgeProtocol import *
+from requests import Session
+#import codeforces_api
 import os
 from dotenv import load_dotenv
 ###########################################
@@ -8,6 +11,22 @@ from dotenv import load_dotenv
 app = Flask(__name__,static_url_path='')
 load_dotenv()
 #cf_api = codeforces_api.CodeforcesApi (os.getenv('API_KEY'), os.getenv('SECRET'))
+s = Session()
+
+@app.route('/')
+def index():
+    return redirect(url_for('send_ranking'))
+
+@app.route('/dev/')
+def dev():
+    #s = Session()
+    login(s, os.getenv('handle'), os.getenv('password'))
+    #submission_ids = get_submission_ids(s, 328447, os.getenv('API_KEY'), os.getenv('SECRET'));
+    #print(submission_ids)
+    #print( get_submission_detail(s, 118062611))
+
+    return get_users(s, 328447, os.getenv('API_KEY'), os.getenv('SECRET'))
+
 
 @app.route('/rank/')
 @app.route('/rank/<path:x>')
@@ -18,14 +37,7 @@ def send_ranking(x='Ranking.html'):
 
 @app.route('/rank/contests/')
 def contests():
-    return jsonify({
-        "ContestTest": {
-            "name": "Test",
-            "begin": 1567823400,
-            "end": 1568697600,
-            "score_precision": 0
-        }
-    })
+    return jsonify(get_contest(s,328447))
 
 @app.route('/rank/teams/')
 def teams():
@@ -33,21 +45,7 @@ def teams():
 
 @app.route('/rank/tasks/')
 def tasks():
-    return jsonify({
-    "Pinata": {
-        "name": "A. Pinata",
-        "short_name": "Pinata",
-        "contest": "ContestTest",
-        "max_score": 100,
-        "extra_headers": [
-            "Subtask 1 (87)",
-            "Subtask 2 (13)"
-        ],
-        "order": 0,
-        "score_mode": "max_subtask",
-        "score_precision": 0
-    }
-    })
+    return jsonify(get_tasks(s,328447))
 
 @app.route('/rank/users/')
 def users():
@@ -66,7 +64,7 @@ def scores():
     return jsonify(
 {
     "test1909_5fbwu5230":{
-        "Pinata":100.0
+        "A":100.0
     }
 }
     )
