@@ -1,7 +1,13 @@
+###########################################
 from flask import Flask, request, send_from_directory, jsonify, Response
+import codeforces_api
 import os
-# set the project root directory as the static folder, you can set others.
+from dotenv import load_dotenv
+###########################################
+
 app = Flask(__name__,static_url_path='')
+load_dotenv()
+#cf_api = codeforces_api.CodeforcesApi (os.getenv('API_KEY'), os.getenv('SECRET'))
 
 @app.route('/rank/')
 @app.route('/rank/<path:x>')
