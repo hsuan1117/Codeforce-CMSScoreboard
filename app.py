@@ -19,7 +19,9 @@ s = Session()
 
 @app.route('/')
 def index():
-    return redirect(url_for('send_ranking'))
+    root_dir = os.path.dirname(__file__)
+    return send_from_directory(root_dir, 'home.html')
+    # return redirect(url_for('send_ranking'))
 
 
 @app.route('/dev/')
@@ -34,7 +36,7 @@ def send_ranking(x='Ranking.html'):
     print(x)
     with open('.gitignore') as f:
         if x in f.read():
-            x='Ranking.html'
+            x = 'Ranking.html'
     root_dir = os.path.dirname(__file__)
     return send_from_directory(root_dir, x)
 
