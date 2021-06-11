@@ -98,7 +98,10 @@ def get_contest(s, contestId, key=os.getenv('API_KEY'), secret=os.getenv('SECRET
     apiSig = sha512(f'123456/{methods}?{data}#{secret}'.encode()).hexdigest()
     res = s.get(f'https://codeforces.com/api/{methods}?{data}', params={'apiSig': '123456' + apiSig})
     api_json = json.loads(res.text)
-    # print(api_json)
+
+    if api_json['status'] == 'FAILED':
+        print(api_json['comment'])
+        return {}
 
     contest = api_json['result']['contest']
 
