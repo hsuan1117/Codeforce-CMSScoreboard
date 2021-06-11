@@ -24,7 +24,7 @@ def login(s, handle, password):
     assert 'Logout' in res.text
 
 def get_submission_detail(s, ID):
-    cache_file = pathlib.Path(f"cache/submission/{ID}.w3")
+    cache_file = pathlib.Path(f"cache/submission-{ID}.w3")
 
     if not cache_file.exists():
         res = s.get('https://codeforces.com')
@@ -34,11 +34,11 @@ def get_submission_detail(s, ID):
             'submissionId': ID,
         }
         res = s.post('https://codeforces.com/group/HELkcZPVHX/data/judgeProtocol', data = data) # CHANGE IT
-        with open(f"cache/submission/{ID}.w3", 'w') as tmp:
+        with open(f"cache/submission-{ID}.w3", 'w') as tmp:
             tmp.write(res.text)
         return res.text
     else:
-        with open(f"cache/submission/{ID}.w3", 'r') as tmp:
+        with open(f"cache/submission-{ID}.w3", 'r') as tmp:
             return tmp.read()
 
 def logout(s):
@@ -136,21 +136,44 @@ def get_tasks(s, contestId, key=os.getenv('API_KEY'), secret=os.getenv('SECRET')
 
 def get_submission_ids(s, contestId, key=os.getenv('API_KEY'), secret=os.getenv('SECRET')):
     contestId = 328447
-    data = urlencode({
-        'apiKey': key,
-        'contestId': contestId,
-        # 'count': 100,
-        # 'from': 1,
-        'time': int(time())
-    })
-    methods = 'contest.status'
-    apiSig = sha512(f'123456/{methods}?{data}#{secret}'.encode()).hexdigest()
-    res = s.get(f'https://codeforces.com/api/{methods}?{data}', params = {'apiSig': '123456' + apiSig})
-    api_json = json.loads(res.text)
+    cache_file = pathlib.Path('cache/submissionIds.json')
+    version_cache = open('cache/submissionIds.last','w+')
+
+    if not cache_file.exists() or int(time()) - int(cache_file.stat().st_mtime) >= 10*60:
+        if not cache_file.exists():
+            data = urlencode({
+                'apiKey': key,
+                'contestId': contestId,
+                'time': int(time())
+            })
+        else:
+            data = urlencode({
+                'apiKey': key,
+                'contestId': contestId,
+                # 'count': 100,
+                'from': int(version_cache.read()),
+                'time': int(time())
+            })
+        methods = 'contest.status'
+        apiSig = sha512(f'123456/{methods}?{data}#{secret}'.encode()).hexdigest()
+        res = s.get(f'https://codeforces.com/api/{methods}?{data}', params = {'apiSig': '123456' + apiSig})
+        api_json = json.loads(res.text)
+        if not cache_file.exists():
+            json.dump(api_json,open('cache/submissionIds.json','w+'))
+            version_cache.write(str(len(api_json['result'])))
+        else:
+            origin = json.load(open('cache/submissionIds.json','r'))
+            origin.extend(api_json)
+            json.dump(api_json,open('cache/submissionIds.json','w+'))
+            version_cache.write(str(int(version_cache.read()) + len(api_json['result'])))
+    else:
+        api_json = json.load(open('cache/submissionIds.json','r'))
+        print('using cache submission ids')
+
     submission_ids = []
-    print(api_json)
+    #print(api_json)
     for submission_info in api_json['result']:
-        print(api_json['result'])
+        #print(api_json['result'])
         if (submission_info['author']['participantType'] == 'MANAGER'):
             continue
         if (submission_info['relativeTimeSeconds'] == 2147483647):

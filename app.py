@@ -69,13 +69,6 @@ def scores():
             submission[2]: sum(submission[4][1])
         }
     return jsonify(returnObj)
-    return jsonify(
-{
-    "test1909_5fbwu5230":{
-        "A":100.0
-    }
-}
-    )
 
 @app.route('/rank/history/')
 def history():
