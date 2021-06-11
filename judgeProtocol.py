@@ -4,6 +4,8 @@ from hashlib import sha512
 from urllib.parse import urlencode
 from time import time
 import os
+import pathlib
+from _datetime import datetime
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -37,21 +39,40 @@ def logout(s):
     res = s.get('https://codeforces.com' + link)
     assert 'Logout' not in res.text
 
-def get_users(s, contestId, key, secret):
-    data = urlencode({
-        'apiKey': key,
-        'contestId': contestId,
-        # 'count': 100,
-        # 'from': 1,
-        'time': int(time())
-    })
-    methods = 'contest.standings'
-    apiSig = sha512(f'123456/{methods}?{data}#{secret}'.encode()).hexdigest()
-    res = s.get(f'https://codeforces.com/api/{methods}?{data}', params = {'apiSig': '123456' + apiSig})
-    api_json = json.loads(res.text)
+def get_users(s, contestId, key=os.getenv('API_KEY'), secret=os.getenv('SECRET')):
+    cache_file = pathlib.Path('cache/users.json')
+    user_list = {}
 
-    print(api_json['result'])
-    return api_json['result']
+    if not cache_file.exists() or int(time()) - int(cache_file.stat().st_mtime) >= 10*60:
+        f = open('cache/users.json',"w")
+        data = urlencode({
+            'apiKey': key,
+            'contestId': contestId,
+            # 'count': 100,
+            # 'from': 1,
+            'time': int(time())
+        })
+
+        methods = 'contest.status'
+        apiSig = sha512(f'123456/{methods}?{data}#{secret}'.encode()).hexdigest()
+        res = s.get(f'https://codeforces.com/api/{methods}?{data}', params={'apiSig': '123456' + apiSig})
+        api_json = json.loads(res.text)
+        users = api_json['result']
+        # print(api_json['result'])
+
+        for user in users:
+            #print(user['author'])
+            user_list[user['author']['members'][0]['handle']] = {
+                "f_name": user['author']['members'][0]['handle'],
+                "l_name": user['author']['members'][0]['handle'],
+                "team": None
+            }
+        json.dump(user_list,f)
+    else:
+        print("[Debug] using cache user")
+        with open("cache/users.json", 'r') as tmp:
+            user_list = json.load(tmp)
+    return user_list
 
 def get_contest(s, contestId, key=os.getenv('API_KEY'), secret=os.getenv('SECRET')):
     data = urlencode({
@@ -63,6 +84,8 @@ def get_contest(s, contestId, key=os.getenv('API_KEY'), secret=os.getenv('SECRET
     apiSig = sha512(f'123456/{methods}?{data}#{secret}'.encode()).hexdigest()
     res = s.get(f'https://codeforces.com/api/{methods}?{data}', params = {'apiSig': '123456' + apiSig})
     api_json = json.loads(res.text)
+    #print(api_json)
+
     contest = api_json['result']['contest']
 
     returnObj = {}

@@ -23,9 +23,9 @@ def dev():
     login(s, os.getenv('handle'), os.getenv('password'))
     #submission_ids = get_submission_ids(s, 328447, os.getenv('API_KEY'), os.getenv('SECRET'));
     #print(submission_ids)
-    #print( get_submission_detail(s, 118062611))
+    #return get_submission_detail(s, 118062611)
 
-    return get_users(s, 328447, os.getenv('API_KEY'), os.getenv('SECRET'))
+    return jsonify(get_users(s, 328447, os.getenv('API_KEY'), os.getenv('SECRET')))
 
 
 @app.route('/rank/')
@@ -49,6 +49,7 @@ def tasks():
 
 @app.route('/rank/users/')
 def users():
+    return jsonify(get_users(s,328447))
     return jsonify(
 {
   "test1909_5fbwu5230": {
