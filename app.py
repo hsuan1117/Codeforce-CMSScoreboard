@@ -24,12 +24,7 @@ def index():
 
 @app.route('/dev/')
 def dev():
-    # s = Session()
     login(s, os.getenv('handle'), os.getenv('password'))
-    # submission_ids = get_submission_ids(s, 328447, os.getenv('API_KEY'), os.getenv('SECRET'));
-    # print(submission_ids)
-    # return get_submission_detail(s, 118062611)
-
     return jsonify(get_users(s, 328447, os.getenv('API_KEY'), os.getenv('SECRET')))
 
 
@@ -97,6 +92,7 @@ msgs = queue.Queue(maxsize=5)
 @app.route('/rank/events/')
 def events():
     msgs.put("only test")
+
     def stream():
         while True:
             message = msgs.get(True)  # returns a queue.Queue
@@ -106,10 +102,12 @@ def events():
     return Response(stream(),
                     mimetype="text/event-stream")
 
+
 @app.route('/api/test', methods=['GET'])
 def api_parse_sentence():
     msgs.put(request.args.get('sentence'))
     return "OK"
+
 
 @app.route('/rank/logo/')
 def logo():
