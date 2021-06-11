@@ -50,18 +50,25 @@ def tasks():
 @app.route('/rank/users/')
 def users():
     return jsonify(get_users(s,328447))
-    return jsonify(
-{
-  "test1909_5fbwu5230": {
-    "f_name": "101",
-    "l_name": "test1909_bwu5230",
-    "team": None
-  }
-}
-    )
 
 @app.route('/rank/scores/')
 def scores():
+    login(s, os.getenv('handle'), os.getenv('password'))
+    submission_ids = get_submission_ids(s, 328447)
+    print(submission_ids)
+    data = [[x[0], x[1], x[2], x[3], process_submission(x[4],get_submission_detail(s, x[4]))] for x in submission_ids]
+    returnObj = {}
+    for submission in data:
+        if submission[0] in returnObj:
+            if submission[2] in returnObj[submission[0]]:
+                returnObj[submission[0]] = {
+                    submission[2]: max(sum(submission[4][1]),(returnObj[submission[0]][submission[2]]))
+                }
+
+        returnObj[submission[0]] = {
+            submission[2]: sum(submission[4][1])
+        }
+    return jsonify(returnObj)
     return jsonify(
 {
     "test1909_5fbwu5230":{
@@ -97,7 +104,7 @@ def sublist(id):
 
 @app.route('/rank/events/')
 def events():
-    return Response("",
+    return Response('',
                           mimetype="text/event-stream")
 
 @app.route('/rank/logo/')
@@ -113,4 +120,4 @@ def faces(id):
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True,threaded=True)

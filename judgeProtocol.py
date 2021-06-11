@@ -24,14 +24,22 @@ def login(s, handle, password):
     assert 'Logout' in res.text
 
 def get_submission_detail(s, ID):
-    res = s.get('https://codeforces.com')
-    csrf_token = re.findall('<meta name="X-Csrf-Token" content="(.{32})"/>', res.text)[0]
-    data = {
-        'csrf_token': csrf_token,
-        'submissionId': ID,
-    }
-    res = s.post('https://codeforces.com/group/HELkcZPVHX/data/judgeProtocol', data = data) # CHANGE IT
-    return res.text
+    cache_file = pathlib.Path(f"cache/submission/{ID}.w3")
+
+    if not cache_file.exists():
+        res = s.get('https://codeforces.com')
+        csrf_token = re.findall('<meta name="X-Csrf-Token" content="(.{32})"/>', res.text)[0]
+        data = {
+            'csrf_token': csrf_token,
+            'submissionId': ID,
+        }
+        res = s.post('https://codeforces.com/group/HELkcZPVHX/data/judgeProtocol', data = data) # CHANGE IT
+        with open(f"cache/submission/{ID}.w3", 'w') as tmp:
+            tmp.write(res.text)
+        return res.text
+    else:
+        with open(f"cache/submission/{ID}.w3", 'r') as tmp:
+            return tmp.read()
 
 def logout(s):
     res = s.get('https://codeforces.com')
@@ -126,7 +134,7 @@ def get_tasks(s, contestId, key=os.getenv('API_KEY'), secret=os.getenv('SECRET')
         }
     return returnObj
 
-def get_submission_ids(s, contestId, key, secret):
+def get_submission_ids(s, contestId, key=os.getenv('API_KEY'), secret=os.getenv('SECRET')):
     contestId = 328447
     data = urlencode({
         'apiKey': key,
@@ -157,7 +165,8 @@ def get_submission_ids(s, contestId, key, secret):
         submission_ids.append([handle, participant_type, problem_index, submission_time, submission_id])
     return submission_ids
 
-def process_submission(submission):
+def process_submission(id,submission):
+    print('[Submission Detail]: '+submission)
     start = 0
     place = submission.find('Group')
     subtasks = []
@@ -169,7 +178,7 @@ def process_submission(submission):
                 subtasks.append(float(submission[place+2 : i]))
                 break
         place = submission.find('Group', start)
-    return subtasks
+    return [id,subtasks]
 
 if __name__ == '__main__':
     # handle = input('enter handle: ')
