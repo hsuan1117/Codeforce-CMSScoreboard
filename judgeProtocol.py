@@ -7,7 +7,9 @@ import os
 import pathlib
 from _datetime import datetime
 from dotenv import load_dotenv
+
 load_dotenv()
+
 
 def login(s, handle, password):
     res = s.get('https://codeforces.com/enter')
@@ -20,8 +22,9 @@ def login(s, handle, password):
         'handleOrEmail': handle,
         'password': password
     }
-    res = s.post('https://codeforces.com/enter', data = data)
+    res = s.post('https://codeforces.com/enter', data=data)
     assert 'Logout' in res.text
+
 
 def get_submission_detail(s, ID):
     cache_file = pathlib.Path(f"cache/submission-{ID}.w3")
@@ -33,7 +36,7 @@ def get_submission_detail(s, ID):
             'csrf_token': csrf_token,
             'submissionId': ID,
         }
-        res = s.post('https://codeforces.com/group/HELkcZPVHX/data/judgeProtocol', data = data) # CHANGE IT
+        res = s.post(f"https://codeforces.com/group/{os.getenv('group_id')}/data/judgeProtocol", data=data)  # CHANGE IT
         with open(f"cache/submission-{ID}.w3", 'w') as tmp:
             tmp.write(res.text)
         return res.text
@@ -41,18 +44,20 @@ def get_submission_detail(s, ID):
         with open(f"cache/submission-{ID}.w3", 'r') as tmp:
             return tmp.read()
 
+
 def logout(s):
     res = s.get('https://codeforces.com')
     link = re.findall('<a href="(/.{32}/logout)">Logout</a>', res.text)[0]
     res = s.get('https://codeforces.com' + link)
     assert 'Logout' not in res.text
 
+
 def get_users(s, contestId, key=os.getenv('API_KEY'), secret=os.getenv('SECRET')):
     cache_file = pathlib.Path('cache/users.json')
     user_list = {}
 
-    if not cache_file.exists() or int(time()) - int(cache_file.stat().st_mtime) >= 10*60:
-        f = open('cache/users.json',"w")
+    if not cache_file.exists() or int(time()) - int(cache_file.stat().st_mtime) >= 10 * 60:
+        f = open('cache/users.json', "w")
         data = urlencode({
             'apiKey': key,
             'contestId': contestId,
@@ -69,18 +74,19 @@ def get_users(s, contestId, key=os.getenv('API_KEY'), secret=os.getenv('SECRET')
         # print(api_json['result'])
 
         for user in users:
-            #print(user['author'])
+            # print(user['author'])
             user_list[user['author']['members'][0]['handle']] = {
                 "f_name": user['author']['members'][0]['handle'],
                 "l_name": user['author']['members'][0]['handle'],
                 "team": None
             }
-        json.dump(user_list,f)
+        json.dump(user_list, f)
     else:
         print("[Debug] using cache user")
         with open("cache/users.json", 'r') as tmp:
             user_list = json.load(tmp)
     return user_list
+
 
 def get_contest(s, contestId, key=os.getenv('API_KEY'), secret=os.getenv('SECRET')):
     data = urlencode({
@@ -90,20 +96,21 @@ def get_contest(s, contestId, key=os.getenv('API_KEY'), secret=os.getenv('SECRET
     })
     methods = 'contest.standings'
     apiSig = sha512(f'123456/{methods}?{data}#{secret}'.encode()).hexdigest()
-    res = s.get(f'https://codeforces.com/api/{methods}?{data}', params = {'apiSig': '123456' + apiSig})
+    res = s.get(f'https://codeforces.com/api/{methods}?{data}', params={'apiSig': '123456' + apiSig})
     api_json = json.loads(res.text)
-    #print(api_json)
+    # print(api_json)
 
     contest = api_json['result']['contest']
 
     returnObj = {}
     returnObj[contest['name']] = {
-        "name":contest['name'],
-        "begin":contest['startTimeSeconds'],
-        "end":contest['startTimeSeconds']+24*60*60,
+        "name": contest['name'],
+        "begin": contest['startTimeSeconds'],
+        "end": contest['startTimeSeconds'] + 24 * 60 * 60,
         "score_precision": 0
     }
     return returnObj
+
 
 def get_tasks(s, contestId, key=os.getenv('API_KEY'), secret=os.getenv('SECRET')):
     data = urlencode({
@@ -113,7 +120,7 @@ def get_tasks(s, contestId, key=os.getenv('API_KEY'), secret=os.getenv('SECRET')
     })
     methods = 'contest.standings'
     apiSig = sha512(f'123456/{methods}?{data}#{secret}'.encode()).hexdigest()
-    res = s.get(f'https://codeforces.com/api/{methods}?{data}', params = {'apiSig': '123456' + apiSig})
+    res = s.get(f'https://codeforces.com/api/{methods}?{data}', params={'apiSig': '123456' + apiSig})
     api_json = json.loads(res.text)
     tasks = api_json['result']['problems']
 
@@ -134,11 +141,12 @@ def get_tasks(s, contestId, key=os.getenv('API_KEY'), secret=os.getenv('SECRET')
         }
     return returnObj
 
+
 def get_submission_ids(s, contestId, key=os.getenv('API_KEY'), secret=os.getenv('SECRET')):
     contestId = 328447
     cache_file = pathlib.Path('cache/submissionIds.json')
 
-    if not cache_file.exists() or int(time()) - int(cache_file.stat().st_mtime) >= 10*60:
+    if not cache_file.exists():  # or int(time()) - int(cache_file.stat().st_mtime) >= 10 * 60:
         data = urlencode({
             'apiKey': key,
             'contestId': contestId,
@@ -146,23 +154,23 @@ def get_submission_ids(s, contestId, key=os.getenv('API_KEY'), secret=os.getenv(
         })
         methods = 'contest.status'
         apiSig = sha512(f'123456/{methods}?{data}#{secret}'.encode()).hexdigest()
-        res = s.get(f'https://codeforces.com/api/{methods}?{data}', params = {'apiSig': '123456' + apiSig})
+        res = s.get(f'https://codeforces.com/api/{methods}?{data}', params={'apiSig': '123456' + apiSig})
         api_json = json.loads(res.text)
-        json.dump(api_json,open('cache/submissionIds.json','w+'))
+        json.dump(api_json, open('cache/submissionIds.json', 'w+'))
     else:
-        api_json = json.load(open('cache/submissionIds.json','r'))
+        api_json = json.load(open('cache/submissionIds.json', 'r'))
         print('using cache submission ids')
 
     submission_ids = []
-    #print(api_json)
+    # print(api_json)
     for submission_info in api_json['result']:
-        #print(api_json['result'])
+        # print(api_json['result'])
         if (submission_info['author']['participantType'] == 'MANAGER'):
             continue
         if (submission_info['relativeTimeSeconds'] == 2147483647):
             continue
         # if (submission_info['points'] == 0.0):
-            # continue
+        # continue
         handle = submission_info['author']['members'][0]['handle']
         participant_type = submission_info['author']['participantType']
         problem_index = submission_info['problem']['index']
@@ -171,11 +179,12 @@ def get_submission_ids(s, contestId, key=os.getenv('API_KEY'), secret=os.getenv(
         submission_ids.append([handle, participant_type, problem_index, submission_time, submission_id])
     return submission_ids
 
+
 def get_history(s, contestId, key=os.getenv('API_KEY'), secret=os.getenv('SECRET')):
-    contestId = 328447
+    # contestId = 328447
     cache_file = pathlib.Path('cache/submissionIds.json')
 
-    if not cache_file.exists() or int(time()) - int(cache_file.stat().st_mtime) >= 10*60:
+    if not cache_file.exists() or int(time()) - int(cache_file.stat().st_mtime) >= 10 * 60:
         data = urlencode({
             'apiKey': key,
             'contestId': contestId,
@@ -183,16 +192,16 @@ def get_history(s, contestId, key=os.getenv('API_KEY'), secret=os.getenv('SECRET
         })
         methods = 'contest.status'
         apiSig = sha512(f'123456/{methods}?{data}#{secret}'.encode()).hexdigest()
-        res = s.get(f'https://codeforces.com/api/{methods}?{data}', params = {'apiSig': '123456' + apiSig})
+        res = s.get(f'https://codeforces.com/api/{methods}?{data}', params={'apiSig': '123456' + apiSig})
         api_json = json.loads(res.text)
-        json.dump(api_json,open('cache/submissionIds.json','w+'))
+        json.dump(api_json, open('cache/submissionIds.json', 'w+'))
 
     else:
-        api_json = json.load(open('cache/submissionIds.json','r'))
+        api_json = json.load(open('cache/submissionIds.json', 'r'))
         print('using cache submission history')
 
     histories = []
-    #creationTimeSeconds
+    # creationTimeSeconds
     for sub in api_json['result']:
         histories.append([
             sub['author']['members'][0]['handle'],
@@ -202,10 +211,11 @@ def get_history(s, contestId, key=os.getenv('API_KEY'), secret=os.getenv('SECRET
         ])
     return histories
 
+
 def get_sublist(s, contestId, userId, key=os.getenv('API_KEY'), secret=os.getenv('SECRET')):
     ids = get_submission_ids(s, contestId)
     userSub = [id for id in ids if id[0] == userId]
-    data = [[x[0], x[1], x[2], x[3], process_submission(x[4],get_submission_detail(s, x[4]))] for x in userSub]
+    data = [[x[0], x[1], x[2], x[3], process_submission(x[4], get_submission_detail(s, x[4]))] for x in userSub]
     returnArr = []
     for sub in data:
         returnArr.append({
@@ -220,31 +230,18 @@ def get_sublist(s, contestId, userId, key=os.getenv('API_KEY'), secret=os.getenv
 
     return returnArr
 
-def process_submission(id,submission):
-    print('[Submission Detail]: '+submission)
+
+def process_submission(id, submission):
+    print('[Submission Detail]: ' + submission)
     start = 0
     place = submission.find('Group')
     subtasks = []
     while (place >= 0):
-        start = place+1
+        start = place + 1
         place = submission.find(':', start)
-        for i in range(place+2, place+10):
+        for i in range(place + 2, place + 10):
             if (submission[i] == ' '):
-                subtasks.append(float(submission[place+2 : i]))
+                subtasks.append(float(submission[place + 2: i]))
                 break
         place = submission.find('Group', start)
-    return [id,subtasks]
-
-if __name__ == '__main__':
-    # handle = input('enter handle: ')
-    handle = 'owo' # CHANGE IT
-    password = getpass.getpass('enter password: ')
-    contestId = int(input('contestId: '))
-    s = Session()
-    login(s, handle, password)
-    submission_ids = get_submission_ids(s, contestId);
-    data = [[x[0], x[1], x[2], x[3], process_submission(get_submission_detail(s, x[4]))] for x in submission_ids]
-    file = open(str(contestId) + '.txt', 'w')
-    for submission in data:
-        file.write(str(submission) + '\n')
-    logout(s)
+    return [id, subtasks]
