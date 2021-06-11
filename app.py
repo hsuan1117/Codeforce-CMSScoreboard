@@ -72,14 +72,11 @@ def scores():
 
 @app.route('/rank/history/')
 def history():
-    return jsonify(
-[
-    ["test1909_5fbwu5230", "Pinata", 1568107457, 100.0]
-]
-    )
+    return jsonify(get_history(s,328447))
 
 @app.route('/rank/sublist/<id>/')
 def sublist(id):
+    return jsonify(get_sublist(s,328447, id))
     return jsonify(
 [
     {

@@ -137,35 +137,18 @@ def get_tasks(s, contestId, key=os.getenv('API_KEY'), secret=os.getenv('SECRET')
 def get_submission_ids(s, contestId, key=os.getenv('API_KEY'), secret=os.getenv('SECRET')):
     contestId = 328447
     cache_file = pathlib.Path('cache/submissionIds.json')
-    version_cache = open('cache/submissionIds.last','w+')
 
     if not cache_file.exists() or int(time()) - int(cache_file.stat().st_mtime) >= 10*60:
-        if not cache_file.exists():
-            data = urlencode({
-                'apiKey': key,
-                'contestId': contestId,
-                'time': int(time())
-            })
-        else:
-            data = urlencode({
-                'apiKey': key,
-                'contestId': contestId,
-                # 'count': 100,
-                'from': int(version_cache.read()),
-                'time': int(time())
-            })
+        data = urlencode({
+            'apiKey': key,
+            'contestId': contestId,
+            'time': int(time())
+        })
         methods = 'contest.status'
         apiSig = sha512(f'123456/{methods}?{data}#{secret}'.encode()).hexdigest()
         res = s.get(f'https://codeforces.com/api/{methods}?{data}', params = {'apiSig': '123456' + apiSig})
         api_json = json.loads(res.text)
-        if not cache_file.exists():
-            json.dump(api_json,open('cache/submissionIds.json','w+'))
-            version_cache.write(str(len(api_json['result'])))
-        else:
-            origin = json.load(open('cache/submissionIds.json','r'))
-            origin.extend(api_json)
-            json.dump(api_json,open('cache/submissionIds.json','w+'))
-            version_cache.write(str(int(version_cache.read()) + len(api_json['result'])))
+        json.dump(api_json,open('cache/submissionIds.json','w+'))
     else:
         api_json = json.load(open('cache/submissionIds.json','r'))
         print('using cache submission ids')
@@ -183,10 +166,59 @@ def get_submission_ids(s, contestId, key=os.getenv('API_KEY'), secret=os.getenv(
         handle = submission_info['author']['members'][0]['handle']
         participant_type = submission_info['author']['participantType']
         problem_index = submission_info['problem']['index']
-        submission_time = submission_info['relativeTimeSeconds']
+        submission_time = submission_info['creationTimeSeconds']
         submission_id = submission_info['id']
         submission_ids.append([handle, participant_type, problem_index, submission_time, submission_id])
     return submission_ids
+
+def get_history(s, contestId, key=os.getenv('API_KEY'), secret=os.getenv('SECRET')):
+    contestId = 328447
+    cache_file = pathlib.Path('cache/submissionIds.json')
+
+    if not cache_file.exists() or int(time()) - int(cache_file.stat().st_mtime) >= 10*60:
+        data = urlencode({
+            'apiKey': key,
+            'contestId': contestId,
+            'time': int(time())
+        })
+        methods = 'contest.status'
+        apiSig = sha512(f'123456/{methods}?{data}#{secret}'.encode()).hexdigest()
+        res = s.get(f'https://codeforces.com/api/{methods}?{data}', params = {'apiSig': '123456' + apiSig})
+        api_json = json.loads(res.text)
+        json.dump(api_json,open('cache/submissionIds.json','w+'))
+
+    else:
+        api_json = json.load(open('cache/submissionIds.json','r'))
+        print('using cache submission history')
+
+    histories = []
+    #creationTimeSeconds
+    for sub in api_json['result']:
+        histories.append([
+            sub['author']['members'][0]['handle'],
+            sub['problem']['index'],
+            sub['creationTimeSeconds'],
+            sub['points']
+        ])
+    return histories
+
+def get_sublist(s, contestId, userId, key=os.getenv('API_KEY'), secret=os.getenv('SECRET')):
+    ids = get_submission_ids(s, contestId)
+    userSub = [id for id in ids if id[0] == userId]
+    data = [[x[0], x[1], x[2], x[3], process_submission(x[4],get_submission_detail(s, x[4]))] for x in userSub]
+    returnArr = []
+    for sub in data:
+        returnArr.append({
+            "user": sub[0],
+            "task": sub[2],
+            "time": sub[3],
+            "key": sub[4][0],
+            "score": sum(sub[4][1]),
+            "token": False,
+            "extra": sub[4][1]
+        })
+
+    return returnArr
 
 def process_submission(id,submission):
     print('[Submission Detail]: '+submission)
