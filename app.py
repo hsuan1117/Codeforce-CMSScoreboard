@@ -32,6 +32,9 @@ def dev():
 @app.route('/rank/<path:x>')
 def send_ranking(x='Ranking.html'):
     print(x)
+    with open('.gitignore') as f:
+        if x in f.read():
+            x='Ranking.html'
     root_dir = os.path.dirname(__file__)
     return send_from_directory(root_dir, x)
 
