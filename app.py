@@ -73,23 +73,24 @@ def scores():
     for submission in data:  # iter data
         if submission[0] in return_obj:  # Check if handle exists
             if submission[2] in return_obj[submission[0]]:  # Check if prob exists
-                if len(submission[4][1]) != return_obj[submission[0]]:
+                if submission[4][1] == 0:
                     # Patch Compile Error
                     continue
+                #print(1)
                 #print("! "+str(submission[4][0]))
                 #size = max(np.array(submission[4][1]).shape , np.array(return_obj[submission[0]][submission[2]]).shape)
                 #zeros = np.zeros(size)
                 #print(np.array(submission[4][1]).resize((20,0)), end=' one\n')
                 #print(np.array(return_obj[submission[0]][submission[2]]).resize((20,0)), end=' two\n')
-                print(np.maximum(
-                    np.array(submission[4][1]).resize(size),
-                    np.array(return_obj[submission[0]][submission[2]]).resize(size)
-                ), end=' final\n')
-                """
-                return_obj[submission[0]] = {
-                    # 先存 Subtask
-                    submission[2]: np.maximum(submission[4][1], return_obj[submission[0]][submission[2]])
-                }"""
+                try:
+                    return_obj[submission[0]] = {
+                        # 先存 Subtask
+                        submission[2]: np.maximum(submission[4][1], return_obj[submission[0]][submission[2]])
+                    }
+                except:
+                    print(submission[4][1])
+                    print(return_obj[submission[0]][submission[2]])
+                    print('error')
                 # print(return_obj)
 
         return_obj[submission[0]] = {

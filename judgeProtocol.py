@@ -56,7 +56,7 @@ def get_users(s, contestId, key=os.getenv('API_KEY'), secret=os.getenv('SECRET')
     cache_file = pathlib.Path('cache/users.json')
     user_list = {}
 
-    if not cache_file.exists() or int(time()) - int(cache_file.stat().st_mtime) >= 10 * 60:
+    if not cache_file.exists() or int(time()) - int(cache_file.stat().st_mtime) >= 2 * 60:
         f = open('cache/users.json', "w")
         data = urlencode({
             'apiKey': key,
@@ -125,6 +125,11 @@ def get_tasks(s, contestId, key=os.getenv('API_KEY'), secret=os.getenv('SECRET')
     apiSig = sha512(f'123456/{methods}?{data}#{secret}'.encode()).hexdigest()
     res = s.get(f'https://codeforces.com/api/{methods}?{data}', params={'apiSig': '123456' + apiSig})
     api_json = json.loads(res.text)
+
+    if api_json['status'] == 'FAILED':
+        print(api_json['comment'])
+        return {}
+
     tasks = api_json['result']['problems']
 
     returnObj = {}
@@ -146,10 +151,10 @@ def get_tasks(s, contestId, key=os.getenv('API_KEY'), secret=os.getenv('SECRET')
 
 
 def get_submission_ids(s, contestId, key=os.getenv('API_KEY'), secret=os.getenv('SECRET')):
-    contestId = 328447
+    # contestId = 328447
     cache_file = pathlib.Path('cache/submissionIds.json')
 
-    if not cache_file.exists():  # or int(time()) - int(cache_file.stat().st_mtime) >= 10 * 60:
+    if not cache_file.exists() or int(time()) - int(cache_file.stat().st_mtime) >= 10 * 60:
         data = urlencode({
             'apiKey': key,
             'contestId': contestId,
@@ -159,6 +164,7 @@ def get_submission_ids(s, contestId, key=os.getenv('API_KEY'), secret=os.getenv(
         apiSig = sha512(f'123456/{methods}?{data}#{secret}'.encode()).hexdigest()
         res = s.get(f'https://codeforces.com/api/{methods}?{data}', params={'apiSig': '123456' + apiSig})
         api_json = json.loads(res.text)
+        print(api_json)
         json.dump(api_json, open('cache/submissionIds.json', 'w+'))
     else:
         api_json = json.load(open('cache/submissionIds.json', 'r'))
@@ -235,7 +241,7 @@ def get_sublist(s, contestId, userId, key=os.getenv('API_KEY'), secret=os.getenv
 
 
 def process_submission(id, submission):
-    print('[Submission Detail]: ' + submission)
+    # print('[Submission Detail]: ' + submission)
     start = 0
     place = submission.find('Group')
     subtasks = []
