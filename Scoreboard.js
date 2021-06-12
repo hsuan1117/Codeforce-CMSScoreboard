@@ -94,9 +94,11 @@ var Scoreboard = new function () {
         });
 
         // Create callbacks for UserPanel
+        /*
         self.tbody_el.on("click", "td.f_name, td.l_name", function () {
             UserDetail.show($(this).parent().data("user"));
         });
+        */
 
         // Create callbacks for animation-end
         self.tbody_el.on('animationend', 'tr', function(event) {
