@@ -1,4 +1,6 @@
 import getpass, re, json
+import random
+
 from requests import Session
 from hashlib import sha512
 from urllib.parse import urlencode
@@ -36,7 +38,7 @@ def get_submission_detail(s, ID):
             'csrf_token': csrf_token,
             'submissionId': ID,
         }
-        res = s.post(f"https://codeforces.com/group/{os.getenv('group_id')}/data/judgeProtocol", data=data)  # CHANGE IT
+        res = s.post(f"https://codeforces.com/group/{os.getenv('GROUP_ID')}/data/judgeProtocol", data=data)  # CHANGE IT
         with open(f"cache/submission-{ID}.w3", 'w') as tmp:
             tmp.write(res.text)
         return res.text
@@ -136,14 +138,14 @@ def get_tasks(s, contestId, key=os.getenv('API_KEY'), secret=os.getenv('SECRET')
     for task in tasks:
         returnObj[task['index']] = {
             "name": task['name'],
-            "shortName": task['index'],
+            "short_name": task['index'],
             "contest": api_json['result']['contest']['name'],
             "max_score": 100,
             "extra_headers": [
                 "Subtask 1 (87)",
                 "Subtask 2 (13)"
             ],
-            "order": 0,
+            "order": ord(task['index']),
             "score_mode": "max_subtask",
             "score_precision": 0
         }
