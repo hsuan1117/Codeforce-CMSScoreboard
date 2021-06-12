@@ -1,15 +1,16 @@
 ###########################################
 import queue
 
-from flask import Flask, request, send_from_directory, jsonify, Response, redirect, url_for
+from flask import Flask, request, send_from_directory, jsonify, Response, redirect, url_for, render_template
 from judgeProtocol import *
 from requests import Session
 import os
+import numpy as np
 from dotenv import load_dotenv
 
 ###########################################
 
-app = Flask(__name__, static_url_path='')
+app = Flask(__name__, static_url_path='', template_folder='')
 load_dotenv()
 s = Session()
 
@@ -17,6 +18,7 @@ s = Session()
 @app.route('/')
 def index():
     root_dir = os.path.dirname(__file__)
+    return render_template('home.html', Group=os.getenv('GROUP_ID'), ContestId=os.getenv('CONTEST_ID'))
     return send_from_directory(root_dir, 'home.html')
     # return redirect(url_for('send_ranking'))
 
@@ -62,20 +64,43 @@ def users():
 def scores():
     login(s, os.getenv('HANDLE'), os.getenv('PASSWORD'))
     submission_ids = get_submission_ids(s, int(os.getenv('CONTEST_ID')))
-    print(submission_ids)
-    data = [[x[0], x[1], x[2], x[3], process_submission(x[4], get_submission_detail(s, x[4]))] for x in submission_ids]
-    returnObj = {}
-    for submission in data:
-        if submission[0] in returnObj:
-            if submission[2] in returnObj[submission[0]]:
-                returnObj[submission[0]] = {
-                    submission[2]: max(sum(submission[4][1]), (returnObj[submission[0]][submission[2]]))
-                }
 
-        returnObj[submission[0]] = {
-            submission[2]: sum(submission[4][1])
+    # print(submission_ids)
+    # Handle Type ProbIndex SubmitTime [id,subtask]
+    data = [[x[0], x[1], x[2], x[3], process_submission(x[4], get_submission_detail(s, x[4]))] for x in submission_ids]
+    return_obj = {}
+
+    for submission in data:  # iter data
+        if submission[0] in return_obj:  # Check if handle exists
+            if submission[2] in return_obj[submission[0]]:  # Check if prob exists
+                if len(submission[4][1]) != return_obj[submission[0]]:
+                    # Patch Compile Error
+                    continue
+                #print("! "+str(submission[4][0]))
+                #size = max(np.array(submission[4][1]).shape , np.array(return_obj[submission[0]][submission[2]]).shape)
+                #zeros = np.zeros(size)
+                #print(np.array(submission[4][1]).resize((20,0)), end=' one\n')
+                #print(np.array(return_obj[submission[0]][submission[2]]).resize((20,0)), end=' two\n')
+                print(np.maximum(
+                    np.array(submission[4][1]).resize(size),
+                    np.array(return_obj[submission[0]][submission[2]]).resize(size)
+                ), end=' final\n')
+                """
+                return_obj[submission[0]] = {
+                    # 先存 Subtask
+                    submission[2]: np.maximum(submission[4][1], return_obj[submission[0]][submission[2]])
+                }"""
+                # print(return_obj)
+
+        return_obj[submission[0]] = {
+            submission[2]: submission[4][1]
         }
-    return jsonify(returnObj)
+    # return return_obj
+    # returnObj 轉換為總分
+    for user in return_obj:
+        for task in return_obj[user]:
+            return_obj[user][task] = sum(return_obj[user][task])
+    return jsonify(return_obj)
 
 
 @app.route('/rank/history/')
