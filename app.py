@@ -71,35 +71,45 @@ def scores():
     return_obj = {}
 
     for submission in data:  # iter data
+        if len(submission[4][1]) == 0:
+            # Patch Compile Error
+            print("<>! "+submission[0] + " " + submission[2] + ' ' +str(submission[4][0]))
+            continue
+
         if submission[0] in return_obj:  # Check if handle exists
             if submission[2] in return_obj[submission[0]]:  # Check if prob exists
-                if submission[4][1] == 0:
+                """if submission[4][1] == 0:
                     # Patch Compile Error
-                    continue
+                    continue"""
                 #print(1)
-                #print("! "+str(submission[4][0]))
+                print(">>! "+submission[0] + " " + submission[2] + ' ' + str(submission[4][1]))
+                # print()
                 #size = max(np.array(submission[4][1]).shape , np.array(return_obj[submission[0]][submission[2]]).shape)
                 #zeros = np.zeros(size)
                 #print(np.array(submission[4][1]).resize((20,0)), end=' one\n')
                 #print(np.array(return_obj[submission[0]][submission[2]]).resize((20,0)), end=' two\n')
+                print(np.maximum(submission[4][1], return_obj[submission[0]][submission[2]]), end=f'List: {submission[2]}\n')
                 try:
-                    return_obj[submission[0]] = {
-                        # 先存 Subtask
-                        submission[2]: np.maximum(submission[4][1], return_obj[submission[0]][submission[2]])
-                    }
-                except:
+                    return_obj[submission[0]][submission[2]] = np.maximum(submission[4][1], return_obj[submission[0]][submission[2]])
+                except Exception as e:
                     print(submission[4][1])
                     print(return_obj[submission[0]][submission[2]])
-                    print('error')
+                    print('error, '+str(e))
                 # print(return_obj)
+            else:
+                return_obj[submission[0]][submission[2]] = submission[4][1]
+        else:
+            return_obj[submission[0]] = {
+                submission[2] : submission[4][1]
+            }
 
-        return_obj[submission[0]] = {
-            submission[2]: submission[4][1]
-        }
+        #print("Add ", submission[4][1])
+        #return_obj[submission[0]][submission[2]] = submission[4][1]
     # return return_obj
     # returnObj 轉換為總分
     for user in return_obj:
         for task in return_obj[user]:
+            print(return_obj[user][task], end=f' {task} final\n')
             return_obj[user][task] = sum(return_obj[user][task])
     return jsonify(return_obj)
 

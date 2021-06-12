@@ -178,8 +178,11 @@ def get_submission_ids(s, contestId, key=os.getenv('API_KEY'), secret=os.getenv(
             continue
         if (submission_info['relativeTimeSeconds'] == 2147483647):
             continue
-        # if (submission_info['points'] == 0.0):
-        # continue
+        if (submission_info['points'] == 0.0):
+            continue
+        if (submission_info['verdict'] == 'COMPILATION_ERROR'):
+            continue
+
         handle = submission_info['author']['members'][0]['handle']
         participant_type = submission_info['author']['participantType']
         problem_index = submission_info['problem']['index']
