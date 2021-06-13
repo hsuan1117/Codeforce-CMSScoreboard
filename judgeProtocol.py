@@ -236,7 +236,7 @@ def get_sublist(s, contestId, userId, key=os.getenv('API_KEY'), secret=os.getenv
             "user": sub[0],
             "task": sub[2],
             "time": sub[3],
-            "key": sub[4][0],
+            "key": str(sub[4][0]),
             "score": sum(sub[4][1]),
             "token": False,
             "extra": sub[4][1]
